@@ -12,8 +12,8 @@ public class Main : BasePlugin
     public override string ModuleName => "AskOlcer";
     public override string ModuleAuthor => "Abby";
     public override string ModuleVersion => "1.0.0";
-    
-    public List<CCSPlayerController> _countdown = new List<CCSPlayerController>();
+
+    private readonly List<CCSPlayerController> _cooldowns = new();
 
     private static readonly Random _random = new();
 
@@ -26,14 +26,15 @@ public class Main : BasePlugin
     {
         RemoveCommand("askolc", AskOlcer);
     }
-    
+
     public void AskOlcer(CCSPlayerController? player, CommandInfo commandInfo)
     {
-        
-        
-        if (_countdown.Contains(player))
+
+
+        if (_cooldowns.Contains(player))
         {
-            commandInfo.ReplyToCommand($" {ChatColors.Blue}[ABBY] {ChatColors.Red}Kullanmak için 3 saniye beklemelisiniz.");
+            commandInfo.ReplyToCommand(
+                $" {ChatColors.Blue}[{ChatColors.Gold}ABBY{ChatColors.Blue}] {ChatColors.White}Lütfen {ChatColors.Red}3 {ChatColors.White}saniye sonra tekrar deneyin!");
             return;
         }
 
@@ -52,14 +53,10 @@ public class Main : BasePlugin
             commandInfo.ReplyToCommand($"  {ChatColors.Blue}[ABBY] {ChatColors.Red}Kendini sevmek en büyük aşktır! {ChatColors.White}%100");
             return;
         }
-
-        int lovePercentage = CalculateLovePercentage(player, targetPlayer);
+        _cooldowns.Add(player);
+        AddTimer(3, () => { _cooldowns.Remove(player); });
+        int lovePercentage = CalculateLovePercentage();
         string loveMessage = GetLoveMessage(lovePercentage);
-        _countdown.Add(targetPlayer);
-        AddTimer(3, () =>
-        {
-            _countdown.Remove(targetPlayer);
-        });
         Server.PrintToChatAll(
             $" {ChatColors.LightBlue}[{ChatColors.Gold}ABBY ÖLÇER{ChatColors.LightBlue}] " +
             $"{ChatColors.Green}{player.PlayerName} {ChatColors.White}ile " +
@@ -83,23 +80,24 @@ public class Main : BasePlugin
         return targets.Count() == 1 ? targets : null;
     }
 
-    private static int CalculateLovePercentage(CCSPlayerController player, CCSPlayerController target)
+    private static int CalculateLovePercentage()
     {
-        ulong seed = player.SteamID ^ target.SteamID;
-        var random = new Random((int)(seed & 0xFFFFFFFF));
+        var random = new Random((int)(DateTime.Now.Millisecond));
         return random.Next(101);
     }
 
+
+
     private static string GetLoveMessage(int percentage)
+{
+    return percentage switch
     {
-        return percentage switch
-        {
-            >= 90 => $"{ChatColors.Red}İlahi Aşk!",
-            >= 70 => $"{ChatColors.Purple}Çok Güzel Bir Aşk!",
-            >= 50 => $"{ChatColors.LightBlue}Orta Halli Bir Aşk!",
-            >= 30 => $"{ChatColors.Green}Eh İşte!",
-            >= 10 => $"{ChatColors.Grey}Zoraki Aşk!",
-            _ => $"{ChatColors.DarkRed}Yok Böyle Bir Aşk!"
-        };
-    }
+        >= 90 => $"{ChatColors.Red}Seninle T-Rex'in kolu kadar eksiksiz bir aşk! 🦖❤️",
+        >= 70 => $"{ChatColors.Purple}Aşkın gözü kör olsun, neredeyse 'kurban olduğum' seviyedesin! 😈", 
+        >= 50 => $"{ChatColors.LightBlue}Bizimki tıpkı çekirdek - izliyoruz ama bir şey çıkmıyor! �",
+        >= 30 => $"{ChatColors.Green}Seninle aşkımız Nescafe gibi - üçüncü bardakta ancak koyuldu! ☕",
+        >= 10 => $"{ChatColors.Grey}Bizim 'aşk' dediğin, balık hafızalının zoraki flörtü! 🐟",
+        _ => $"{ChatColors.DarkRed}Bizimki Homer'ın diyeti gibi - YOK BÖYLE BİR ŞEY! 🍩"
+    };
+}
 }
